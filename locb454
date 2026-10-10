@@ -1,0 +1,1225 @@
+local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
+local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
+local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
+local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
+local BetterOrion = loadstring(game:HttpGet("https://raw.githubusercontent.com/m1kp0/BetterOrion/refs/heads/main/Library.lua"))()
+
+local P = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+local RUN = game:GetService("RunService")
+local WS = game:GetService("Workspace")
+local UIS = game:GetService("UserInputService")
+local STS = game:GetService("Stats")
+local HS = game:GetService("HttpService")
+local LP = P.LocalPlayer
+
+local fpsL, pingL, fc, lut = nil, nil, 0, 0
+local cFPS, cPing = 60, 0
+local dP = nil
+pcall(function() dP = STS.Network.ServerStatsItem["Data Ping"] end)
+
+local mw, defT, tarT, visT, misT, lagT, sndT, cusT, posT, setT
+local defG, exG, tarG, visG, misG, lagG, blobG, sndG, cusG, cusG2, posG, posGT, posGP, posGR
+
+local selT, tgtP
+local kEn, lEn, bP = false, false, nil
+local kM = "Fast"
+local kH, kOX, kOZ, kDS = 15, 0, 0, 0
+local kTm = { Normal = 16, Slow = 26, Fast = 11 }
+
+local akP, akA, pD, gP = {}, {}, {}, {}
+local rE = false
+local sCF, isFz, fzC, stC
+local gcA, gcR, gcC = false, false, nil
+local lsD = { LastSeat = nil }
+local lagSpd, pktSz = 50, 0.1
+local selToy = "FoodCoconut"
+
+local function IsPCLD(o)
+    if not o:IsA("BasePart") then return false end
+    for _, n in ipairs({"partesp", "playercharacterlocationdetector"}) do
+        if string.lower(o.Name) == string.lower(n) then return true end
+    end
+    return false
+end
+
+task.spawn(function()
+    while true do
+        local np = {}
+        for _, o in ipairs(WS:GetDescendants()) do
+            if IsPCLD(o) then table.insert(np, o) end
+        end
+        local pc = #P:GetPlayers()
+        local tc = math.max(pc * 5, 10)
+        local ep = {}
+        if #np > 0 then
+            for i = 1, tc do table.insert(ep, np[((i - 1) % #np) + 1]) end
+        end
+        gP = ep
+        task.wait(1)
+    end
+end)
+
+local function MakeInfoBar()
+    local sg = Instance.new("ScreenGui")
+    sg.Name = "IB"; sg.ResetOnSpawn = false; sg.Parent = game:GetService("CoreGui")
+    local fr = Instance.new("Frame")
+    fr.Size = UDim2.new(0, 225, 0, 24)
+    fr.Position = UDim2.new(0.5, -112, 0, 5)
+    fr.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    fr.BackgroundTransparency = 0.2; fr.BorderSizePixel = 0
+    fr.Active = true; fr.Draggable = true; fr.Parent = sg
+    Instance.new("UICorner", fr).CornerRadius = UDim.new(0, 6)
+    local st = Instance.new("UIStroke", fr)
+    st.Color = Color3.fromRGB(255, 70, 70); st.Thickness = 1
+    local t = Instance.new("TextLabel", fr)
+    t.Size = UDim2.new(0, 65, 1, 0); t.Position = UDim2.new(0, 10, 0, 0)
+    t.BackgroundTransparency = 1; t.Text = "losb"
+    t.TextColor3 = Color3.fromRGB(255, 70, 70); t.TextSize = 13
+    t.Font = Enum.Font.SourceSansBold
+    fpsL = Instance.new("TextLabel", fr)
+    fpsL.Size = UDim2.new(0, 70, 1, 0); fpsL.Position = UDim2.new(0, 80, 0, 0)
+    fpsL.BackgroundTransparency = 1; fpsL.Text = "FPS:60"
+    fpsL.TextColor3 = Color3.fromRGB(255, 255, 255); fpsL.TextSize = 12
+    fpsL.Font = Enum.Font.SourceSans
+    pingL = Instance.new("TextLabel", fr)
+    pingL.Size = UDim2.new(0, 70, 1, 0); pingL.Position = UDim2.new(0, 155, 0, 0)
+    pingL.BackgroundTransparency = 1; pingL.Text = "Ping:0"
+    pingL.TextColor3 = Color3.fromRGB(255, 255, 255); pingL.TextSize = 12
+    pingL.Font = Enum.Font.SourceSans
+end
+MakeInfoBar()
+
+task.spawn(function()
+    while true do
+        if dP then cPing = tonumber(dP:GetValueString():match("%d+")) or 0 end
+        task.wait(0.3)
+    end
+end)
+
+RUN.RenderStepped:Connect(function()
+    fc = fc + 1
+    if tick() - lut >= 1 then cFPS = fc; fc = 0; lut = tick() end
+end)
+
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        if fpsL then fpsL.Text = "FPS:" .. tostring(cFPS) end
+        if pingL then pingL.Text = "Ping:" .. tostring(cPing) end
+    end
+end)
+
+mw = Library:CreateWindow({ Title = "losb", Footer = "by dobriy", NotifySide = "Right", ShowCustomCursor = true })
+
+defT = mw:AddTab("Defense", "shield")
+tarT = mw:AddTab("Target", "users")
+visT = mw:AddTab("Visual", "eye")
+misT = mw:AddTab("Misc", "star")
+lagT = mw:AddTab("Lag", "clock")
+sndT = mw:AddTab("Sound", "music")
+cusT = mw:AddTab("Custom", "palette")
+posT = mw:AddTab("Poses", "person-standing")
+setT = mw:AddTab("Settings", "settings")
+
+defG = defT:AddLeftGroupbox("Defense")
+exG = defT:AddLeftGroupbox("Extra")
+tarG = tarT:AddLeftGroupbox("Target Settings")
+visG = visT:AddLeftGroupbox("Visual Settings")
+misG = misT:AddLeftGroupbox("Misc")
+lagG = lagT:AddLeftGroupbox("Lag Functions")
+blobG = tarT:AddRightGroupbox("Blob Method")
+sndG = sndT:AddLeftGroupbox("Sound")
+cusG = cusT:AddLeftGroupbox("Custom Assets")
+cusG2 = cusT:AddRightGroupbox("Transparency")
+posG = posT:AddLeftGroupbox("AutoClicker", "settings")
+posGT = posT:AddLeftGroupbox("Target", "user")
+posGP = posT:AddRightGroupbox("Presets", "settings-2")
+posGR = posT:AddRightTabbox()
+
+local toyL = {
+    Coconut = "FoodCoconut", Banana = "FoodBanana", Fries = "FoodFrenchFries",
+    MeatStick = "FoodMeatStick", Poop = "PoopPile", Donut = "FoodDonut",
+    Cake = "FoodCakePink", Burger = "FoodHamburger", Pizza = "FoodPizzaCheese",
+    Hotdog = "FoodHotdog", Mushroom = "FoodMushroomPoison", Banjo = "InstrumentGuitarBanjo",
+    Violin = "InstrumentGuitarViolin", Ukulele = "InstrumentGuitarUkulele",
+    Sax = "InstrumentWoodwindSaxophone", Vuvuzela = "InstrumentBrassVuvuzela",
+    Bongos = "InstrumentDrumBongos", Mic = "InstrumentVoiceMicrophone",
+    Pepperoni = "FoodPizzaPepperoni", Piano = "InstrumentPianoMelodica",
+    Bread = "FoodBread", Egg = "FoodDippyEgg", Mayo = "FoodMayonnaise",
+    WhiteMug = "CupMugWhite", Ocarina = "InstrumentWoodwindOcarina",
+    SparklePoop = "PoopPileSparkle", BrownMug = "CupMugBrown",
+    Trumpet = "InstrumentBrassTrumpet", Snare = "InstrumentDrumSnare"
+}
+local toyNs = {}
+for k in pairs(toyL) do table.insert(toyNs, k) end
+table.sort(toyNs)
+
+local function GetPL()
+    local n = {}
+    for _, p in ipairs(P:GetPlayers()) do if p ~= LP then table.insert(n, p.Name) end end
+    return n
+end
+
+local tarDD = tarG:AddDropdown("TargetSelect", {
+    Text = "Select Target", Values = GetPL(), Default = 1,
+    Callback = function(v) selT = v; tgtP = P:FindFirstChild(v) end
+})
+
+P.PlayerAdded:Connect(function() task.wait(0.5) tarDD:SetValues(GetPL()) end)
+P.PlayerRemoving:Connect(function() task.wait(0.5) tarDD:SetValues(GetPL()) end)
+
+-- ANTI-KICK
+local akItem = "ToolPickaxe"
+
+local function RemoveAK(tn)
+    pD[tn] = nil
+    local d = akP[tn]
+    if d then
+        if d.BP and d.BP.Parent then d.BP:Destroy() end
+        if d.BG and d.BG.Parent then d.BG:Destroy() end
+        if d.Plate and d.Plate.Parent then pcall(function() d.DT:FireServer(d.Plate) end) end
+        akP[tn] = nil
+    end
+    akA[tn] = nil
+end
+
+local function CreateAK(tp, tn)
+    if akP[tn] and akP[tn].Plate and akP[tn].Plate.Parent then return end
+    local spT = RS:WaitForChild("MenuToys"):WaitForChild("SpawnToyRemoteFunction")
+    local dT = RS:WaitForChild("MenuToys"):WaitForChild("DestroyToy")
+    local sNO = RS:WaitForChild("GrabEvents"):WaitForChild("SetNetworkOwner")
+    local gE = RS:WaitForChild("GrabEvents")
+    local ch = LP.Character
+    local rp = ch and ch:FindFirstChild("HumanoidRootPart")
+    if not rp then return end
+    spT:InvokeServer(akItem, rp.CFrame * CFrame.new(0, 5, 0), Vector3.zero)
+    task.wait(0.3)
+    local tf = WS:FindFirstChild(LP.Name .. "SpawnedInToys")
+    local pl = nil
+    if tf then
+        for _, c in pairs(tf:GetChildren()) do
+            if c.Name == akItem and not c:GetAttribute("AntiKickTarget") then pl = c; break end
+        end
+    end
+    if not pl then return end
+    pl:SetAttribute("AntiKickTarget", tn)
+    for _, pt in pairs(pl:GetDescendants()) do
+        if pt:IsA("BasePart") then
+            pt.CanCollide = false; pt.CanQuery = false; pt.CanTouch = false
+            pt.Transparency = 0.5
+            pt.AssemblyLinearVelocity = Vector3.zero; pt.AssemblyAngularVelocity = Vector3.zero
+            if not pt:FindFirstChild("Highlight") then
+                local h = Instance.new("Highlight", pt)
+                h.FillColor = Color3.fromRGB(255, 105, 180); h.FillTransparency = 0.5
+                h.OutlineColor = Color3.fromRGB(255, 20, 147); h.OutlineTransparency = 0
+            end
+        end
+    end
+    local sPt = pl:FindFirstChild("SoundPart") or pl:FindFirstChildWhichIsA("BasePart")
+    if not sPt then pcall(function() dT:FireServer(pl) end); return end
+    local bp = Instance.new("BodyPosition")
+    bp.D = 200; bp.P = 1000
+    bp.MaxForce = Vector3.new(1e5, 1e5, 1e5); bp.Parent = sPt
+    local bg = Instance.new("BodyGyro")
+    bg.D = 200; bg.P = 1000
+    bg.MaxTorque = Vector3.new(1e5, 1e5, 1e5); bg.Parent = sPt
+    akP[tn] = { Plate = pl, BP = bp, BG = bg, SoundPart = sPt, DT = dT, SNO = sNO, GE = gE }
+    local lu, lc = 0, LP.Character
+    local con
+    con = RUN.RenderStepped:Connect(function()
+        local d = akP[tn]
+        if not d or not d.Plate or not d.Plate.Parent or not d.BP or not d.BP.Parent then
+            if con then con:Disconnect() end; return
+        end
+        local p = P:FindFirstChild(tn == "Self" and LP.Name or tn)
+        if not p or not p.Parent then return end
+        if not akA[tn] then return end
+        if lc ~= LP.Character then
+            lc = LP.Character
+            akP[tn] = nil; akA[tn] = false
+            task.wait(0.3)
+            if akA[tn] == false then akA[tn] = true; CreateAK(p, tn) end
+            if con then con:Disconnect() end; return
+        end
+        local tr = p.Character and p.Character:FindFirstChild("HumanoidRootPart")
+        local det = pD[tn]
+        if det and not det.Parent then pD[tn] = nil; det = nil end
+        if not det and tr then
+            local cd = math.huge
+            for _, o in ipairs(WS:GetDescendants()) do
+                if IsPCLD(o) then
+                    local ds = (o.Position - tr.Position).Magnitude
+                    if ds < cd then cd = ds; det = o end
+                end
+            end
+            if det then pD[tn] = det end
+        end
+        if det and det.Parent then
+            d.BP.Position = det.Position
+            if d.BG and d.BG.Parent then d.BG.CFrame = det.CFrame end
+            if d.SoundPart and d.SoundPart.Parent then
+                d.SoundPart.CFrame = det.CFrame
+                d.SoundPart.CanCollide = false; d.SoundPart.CanQuery = false; d.SoundPart.CanTouch = false
+                d.SoundPart.AssemblyLinearVelocity = Vector3.zero; d.SoundPart.AssemblyAngularVelocity = Vector3.zero
+            end
+            if tick() - lu >= 0.1 and d.GE:FindFirstChild("CreateGrabLine") then
+                lu = tick()
+                pcall(function()
+                    d.SNO:FireServer(d.SoundPart, d.SoundPart.CFrame)
+                    d.GE.CreateGrabLine:FireServer(d.SoundPart, Vector3.zero, det.Position, true)
+                end)
+            end
+        end
+    end)
+    task.spawn(function()
+        while akA[tn] do task.wait(1) end
+        if con then con:Disconnect() end
+        pD[tn] = nil
+        local d = akP[tn]
+        if d then
+            if d.BP and d.BP.Parent then d.BP:Destroy() end
+            if d.BG and d.BG.Parent then d.BG:Destroy() end
+            if d.Plate and d.Plate.Parent then pcall(function() d.DT:FireServer(d.Plate) end) end
+            akP[tn] = nil
+        end
+        akA[tn] = nil
+    end)
+end
+
+defG:AddDropdown("AKItemSelect", { Text = "Anti Kick Item", Values = {"FoodPlate", "ToolPickaxe"}, Default = 2, Callback = function(v) akItem = v end })
+defG:AddToggle("AKSelf", { Text = "Anti Kick (Self)", Default = false, Callback = function(on) if on then akA["Self"] = true; CreateAK(LP, "Self") else RemoveAK("Self") end end })
+
+local akTarDD = defG:AddDropdown("AKTargetSelect", { Text = "Select Target", Values = GetPL(), Default = 1, Callback = function(v) if akTarT then akTarT:SetValue(akA[v] or false) end end })
+local akTarT = defG:AddToggle("AKTargetToggle", { Text = "Anti Kick (Target)", Default = false, Callback = function(on)
+    local n = akTarDD.Value
+    if not n then return end
+    if on then local p = P:FindFirstChild(n); if p then akA[n] = true; CreateAK(p, n) end else RemoveAK(n) end
+end })
+
+defG:AddDropdown("AKAttachSel", { Text = "Anti Kick (Attach) Item", Values = { "NinjaShuriken", "ToolPickaxe" }, Default = 1 })
+defG:AddToggle("AKAttach", { Text = "Anti Kick (Attach)", Default = false, Callback = function(v)
+    _G.AKA = v
+    if not v then
+        local inv = WS:FindFirstChild(LP.Name .. "SpawnedInToys")
+        local dR = RS:FindFirstChild("MenuToys"); if dR then dR = dR:FindFirstChild("DestroyToy") end
+        if inv and dR then for _, it in pairs(inv:GetChildren()) do if it.Name == "AntiKick" then pcall(function() dR:FireServer(it) end) end end end
+        return
+    end
+    task.spawn(function()
+        local spE = RS.PlayerEvents.StickyPartEvent
+        while _G.AKA do
+            task.wait(0.5)
+            local ch = LP.Character
+            if not ch then continue end
+            local inv = WS:FindFirstChild(LP.Name .. "SpawnedInToys")
+            local it = inv and inv:FindFirstChild("NinjaShuriken")
+            if it and it:FindFirstChild("StickyPart") then
+                local rp = ch:FindFirstChild("HumanoidRootPart")
+                if rp then pcall(function() spE:FireServer(it.StickyPart, rp, CFrame.new(0, 0, 0) * CFrame.Angles(0, math.rad(90), math.rad(90))) end) end
+            end
+        end
+    end)
+end })
+
+defG:AddToggle("AntiGrab", { Text = "Anti Grab", Default = false, Callback = function(v)
+    local stR = RS:FindFirstChild("CharacterEvents") and RS.CharacterEvents:FindFirstChild("Struggle")
+    if v then
+        stC = RUN.Heartbeat:Connect(function()
+            local ch = LP.Character
+            if not ch then return end
+            local hd = ch:FindFirstChild("Head")
+            if hd and hd:FindFirstChild("PartOwner") and stR then stR:FireServer(LP) end
+        end)
+    else
+        if stC then stC:Disconnect(); stC = nil end
+    end
+end })
+
+local bpT, bpC = nil, 0
+defG:AddToggle("BreakPCLD", { Text = "break PCLD (anti-kick)", Default = false, Callback = function(on)
+    if bpT then task.cancel(bpT); bpT = nil end
+    if not on then bpC = 0; return end
+    bpT = task.spawn(function()
+        while true do
+            bpC = bpC + 1
+            pcall(function() local h = LP.Character and LP.Character:FindFirstChild("Humanoid"); if h then h.Health = 0 end end)
+            task.wait(1)
+        end
+    end)
+end })
+
+local alC = nil
+defG:AddToggle("AutoLeave", { Text = "Auto Leave (anti-kick)", Default = false, Callback = function(on)
+    if alC then alC:Disconnect(); alC = nil end
+    if not on then return end
+    local wt = {}
+    alC = RS.GameCorrectionEvents.GameCorrectionsNotify.OnClientEvent:Connect(function(m)
+        if m == "Flying" then
+            local ct = os.clock()
+            table.insert(wt, ct)
+            for i = #wt, 1, -1 do if ct - wt[i] > 1 then table.remove(wt, i) end end
+            if #wt >= 3 then task.wait(0.5); LP:Kick("saved") end
+        end
+    end)
+end })
+
+local arC = nil
+defG:AddToggle("AutoReset", { Text = "auto Reset (anti-kick)", Default = false, Callback = function(on)
+    if arC then arC:Disconnect(); arC = nil end
+    if not on then return end
+    arC = RS.GameCorrectionEvents.GameCorrectionsNotify.OnClientEvent:Connect(function(m)
+        if m == "Flying" then pcall(function() local h = LP.Character and LP.Character:FindFirstChild("Humanoid"); if h then h.Health = 0 end end) end
+    end)
+end })
+
+-- GUCCI
+local function SitTrain()
+    if gcR then return end
+    gcR = true
+    local ch = LP.Character
+    local hm = ch and ch:FindFirstChild("Humanoid")
+    if not ch or not hm then gcR = false; return end
+    local oc = ch:GetPivot()
+    local tr = WS.Map.AlwaysHereTweenedObjects and WS.Map.AlwaysHereTweenedObjects:FindFirstChild("Train")
+    local st = nil
+    if tr then for _, c in pairs(tr:GetDescendants()) do if c:IsA("Seat") and c.Occupant == nil and c ~= lsD.LastSeat then lsD.LastSeat = c; st = c; break end end end
+    if not st then gcR = false; return end
+    st:Sit(hm)
+    task.wait(0.5)
+    hm.Sit = false
+    ch:PivotTo(oc)
+    gcR = false
+end
+
+exG:AddToggle("Gucci", { Text = "Gucci (Train)", Default = false, Callback = function(on) gcA = on; if on then SitTrain() end end })
+
+exG:AddDropdown("AILToy", { Text = "Input Lag Item", Values = toyNs, Default = 1, Callback = function(v) selToy = toyL[v] end })
+exG:AddSlider("AILSpeed", { Text = "Pickup Speed", Min = 1, Max = 100, Default = 50, Suffix = " speed", Callback = function(v) lagSpd = v end })
+exG:AddToggle("AIL", { Text = "Anti Input Lag", Default = false, Callback = function(on)
+    _G.AIL = on
+    if not on then return end
+    task.spawn(function()
+        local sR = RS:WaitForChild("MenuToys"):WaitForChild("SpawnToyRemoteFunction")
+        while _G.AIL do
+            local ch = LP.Character
+            local rp = ch and ch:FindFirstChild("HumanoidRootPart")
+            local tf = WS:FindFirstChild(LP.Name .. "SpawnedInToys")
+            local ty = tf and tf:FindFirstChild(selToy)
+            if not ty then
+                if rp then pcall(function() sR:InvokeServer(selToy, rp.CFrame * CFrame.new(0, 5, 0), Vector3.zero) end) end
+                task.wait(0.1)
+            elseif ty and ty:FindFirstChild("HoldPart") then
+                for i = 1, 5000 do
+                    pcall(function()
+                        ty.HoldPart.HoldItemRemoteFunction:InvokeServer(ty, ch)
+                        ty.HoldPart.DropItemRemoteFunction:InvokeServer(ty, rp.CFrame * CFrame.new(0, 2000, 0), Vector3.zero)
+                    end)
+                    task.wait(0.0001)
+                end
+            end
+            task.wait(0.001)
+        end
+    end)
+end })
+
+-- TARGET KICK etc
+local function FastKick()
+    tarG:AddDropdown("KickMode", { Text = "Kick Mode", Values = {"Slow", "Normal", "Fast"}, Default = 3, Callback = function(v) kM = v end })
+    tarG:AddSlider("KickDS", { Text = "DS LINE", Min = 0, Max = 0.2, Default = 0, Rounding = 3, Suffix = " sec", Callback = function(v) kDS = v end })
+    tarG:AddSlider("KickH", { Text = "Kick Height (Y)", Min = 5, Max = 20, Default = 15, Suffix = " studs", Callback = function(v) kH = v end })
+    tarG:AddSlider("KickOX", { Text = "Kick Offset X", Min = -10, Max = 10, Default = 0, Callback = function(v) kOX = v end })
+    tarG:AddSlider("KickOZ", { Text = "Kick Offset Z", Min = -10, Max = 10, Default = 0, Callback = function(v) kOZ = v end })
+    tarG:AddToggle("Kick", { Text = "Kick", Default = false, Callback = function(on)
+        kEn = on
+        if not on then return end
+        task.spawn(function()
+            while kEn do
+                local t = tgtP
+                if not t or not t.Parent then task.wait() continue end
+                local mr = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+                local tr = t.Character and t.Character:FindFirstChild("HumanoidRootPart")
+                local th = t.Character and t.Character:FindFirstChild("Humanoid")
+                if not mr or not tr or not th or th.Health <= 0 then task.wait() continue end
+
+                local gI, useT
+                if kM == "Fast" then gI = 0; useT = false
+                elseif kM == "Normal" then gI = 1/500; useT = true
+                else gI = 1/750; useT = true end
+
+                local gE = RS:WaitForChild("GrabEvents")
+                local sNO = gE:WaitForChild("SetNetworkOwner")
+                local dG = gE:FindFirstChild("DestroyGrabLine")
+                local cG = gE:FindFirstChild("CreateGrabLine")
+                local aPs, aOs = {}, {}
+                local aN = kM == "Slow" and 25 or 15
+                local dT = nil
+
+                pcall(function()
+                    th:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
+                    th:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
+                    th:SetStateEnabled(Enum.HumanoidStateType.Climbing, false)
+                end)
+                th.Sit = false; th.PlatformStand = true
+                th.AutoRotate = false; th.WalkSpeed = 0; th.JumpPower = 0
+
+                local tBP = Instance.new("BodyPosition")
+                tBP.MaxForce = Vector3.new(1e6, 1e6, 1e6); tBP.D = 500; tBP.P = 50000
+                tBP.Position = tr.Position; tBP.Parent = tr
+                local tBG = Instance.new("BodyGyro")
+                tBG.MaxTorque = Vector3.new(1e9, 1e9, 1e9); tBG.D = 500; tBG.P = 50000
+                tBG.CFrame = CFrame.new(tr.Position); tBG.Parent = tr
+
+                local hl = Instance.new("Highlight")
+                hl.FillColor = Color3.fromRGB(255, 255, 255); hl.FillTransparency = 0.5
+                hl.OutlineColor = Color3.fromRGB(255, 255, 255); hl.OutlineTransparency = 0
+                hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                hl.Adornee = t.Character; hl.Parent = t.Character
+
+                if dG then
+                    dT = task.spawn(function()
+                        while kEn and t and t.Parent do
+                            local tc = t.Character
+                            local tr2 = tc and tc:FindFirstChild("HumanoidRootPart")
+                            if not tr2 then task.wait() continue end
+                            pcall(function() dG:FireServer(tr2) end)
+                            if kDS > 0 then task.wait(kDS) else task.wait() end
+                        end
+                    end)
+                end
+
+                local gThread = task.spawn(function()
+                    while kEn and t and t.Parent do
+                        local tc2 = t.Character
+                        local tr3 = tc2 and tc2:FindFirstChild("HumanoidRootPart")
+                        local th3 = tc2 and tc2:FindFirstChild("Humanoid")
+                        local mc2 = LP.Character
+                        local mr2 = mc2 and mc2:FindFirstChild("HumanoidRootPart")
+                        if tr3 and th3 and th3.Health > 0 and mr2 then
+                            local tp = mr2.Position + Vector3.new(kOX, math.min(kH, 20), kOZ)
+                            for _, pt in pairs(tc2:GetChildren()) do if pt:IsA("BasePart") then pcall(function() sNO:FireServer(pt, pt.CFrame) end) end end
+                            pcall(function() sNO:FireServer(tr3, mr2.CFrame) end)
+                            if cG then pcall(function() cG:FireServer(tr3, Vector3.zero, tp, false) end) end
+                        end
+                        if useT then task.wait(gI) else task.wait() end
+                    end
+                end)
+
+                while kEn and t and t.Parent do
+                    local tc = t.Character
+                    local tr2 = tc and tc:FindFirstChild("HumanoidRootPart")
+                    local th2 = tc and tc:FindFirstChild("Humanoid")
+                    if not tr2 or not th2 or th2.Health <= 0 then break end
+                    mr = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+                    if not mr then break end
+                    local dd = (mr.Position - tr2.Position).Magnitude
+                    if dd > 25 then mr.CFrame = tr2.CFrame * CFrame.new(0, 0, 2); mr.Velocity = Vector3.zero end
+                    local tp = mr.Position + Vector3.new(kOX, math.min(kH, 20), kOZ)
+                    if tBP.Parent then tBP.Position = tp end
+                    if tBG.Parent then tBG.CFrame = CFrame.new(tr2.Position) end
+                    th2.Sit = false; th2.PlatformStand = true
+                    th2.AutoRotate = false; th2.WalkSpeed = 0; th2.JumpPower = 0
+                    while #aPs > aN do local a = table.remove(aPs); if a and a.Parent then a:Destroy() end end
+                    while #aOs > aN do local o = table.remove(aOs); if o and o.Parent then o:Destroy() end end
+                    for i = 1, aN do
+                        if not aPs[i] or not aPs[i].Parent then
+                            if aPs[i] then aPs[i]:Destroy() end
+                            local a = Instance.new("AlignPosition")
+                            a.Name = "KA_" .. i
+                            a.Mode = Enum.PositionAlignmentMode.OneAttachment
+                            a.MaxForce = 1e13; a.MaxVelocity = 200000; a.Responsiveness = 20000
+                            local at = Instance.new("Attachment", tr2); a.Attachment0 = at
+                            a.Parent = tr2; aPs[i] = a
+                            local o = Instance.new("AlignOrientation")
+                            o.Name = "KO_" .. i
+                            o.Mode = Enum.OrientationAlignmentMode.OneAttachment
+                            o.MaxTorque = 1e13; o.MaxAngularVelocity = 200000; o.Responsiveness = 20000
+                            local at2 = Instance.new("Attachment", tr2); o.Attachment0 = at2
+                            o.Parent = tr2; aOs[i] = o
+                        end
+                        aPs[i].Position = tp
+                        aOs[i].CFrame = CFrame.new(tr2.Position)
+                    end
+                    task.wait()
+                end
+
+                if gThread then task.cancel(gThread) end
+                if tBP.Parent then tBP:Destroy() end
+                if tBG.Parent then tBG:Destroy() end
+                if dT then task.cancel(dT); dT = nil end
+                if hl.Parent then hl:Destroy() end
+                for _, a in pairs(aPs) do if a and a.Parent then a:Destroy() end end
+                for _, o in pairs(aOs) do if o and o.Parent then o:Destroy() end end
+                local ec = t.Character
+                if ec then
+                    local eh = ec:FindFirstChild("Humanoid")
+                    if eh then eh.PlatformStand = false; eh.AutoRotate = true; eh.WalkSpeed = 16; eh.JumpPower = 50 end
+                end
+                task.wait()
+            end
+        end)
+    end })
+end
+FastKick()
+
+-- RAGDOLL (твой Target Ragdoll)
+tarG:AddToggle("Ragdoll", {
+    Text = "Ragdoll", Default = false,
+    Callback = function(on)
+        if not on then
+            rE = false
+            local mt = WS:FindFirstChild(LP.Name .. "SpawnedInToys")
+            if mt then
+                for _, t in pairs(mt:GetChildren()) do
+                    if t.Name == "PalletLightBrown" then
+                        pcall(function() RS.MenuToys.DestroyToy:FireServer(t) end)
+                    end
+                end
+            end
+            return
+        end
+        rE = true
+        task.spawn(function()
+            local sNO = RS:WaitForChild("GrabEvents"):FindFirstChild("SetNetworkOwner")
+            local HID = CFrame.new(0, 5005, 0)
+            local pal, sp, lst = nil, nil, 0
+            while rE do
+                if tick() - lst >= 4 or not pal or not pal.Parent then
+                    if pal and pal.Parent then pcall(function() RS.MenuToys.DestroyToy:FireServer(pal) end) end
+                    RS.MenuToys.SpawnToyRemoteFunction:InvokeServer("PalletLightBrown", HID, Vector3.new(0, -90, 0))
+                    task.wait(0.05)
+                    local mt = WS:FindFirstChild(LP.Name .. "SpawnedInToys")
+                    local np = mt and mt:FindFirstChild("PalletLightBrown")
+                    if np then
+                        for _, p in pairs(np:GetDescendants()) do
+                            if p:IsA("BasePart") then
+                                p.Massless = true; p.CanCollide = false; p.Transparency = 1
+                                p.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, 0)
+                                p.AssemblyLinearVelocity = Vector3.zero; p.AssemblyAngularVelocity = Vector3.zero
+                            end
+                        end
+                        pal = np; sp = np:FindFirstChild("SoundPart"); lst = tick()
+                    end
+                end
+                if pal and sp and pal.Parent then
+                    local t = tgtP
+                    if t and t.Parent then
+                        local tc = t.Character
+                        local to = tc and (tc:FindFirstChild("UpperTorso") or tc:FindFirstChild("Torso"))
+                        if to then
+                            for _, p in pairs(pal:GetDescendants()) do
+                                if p:IsA("BasePart") then
+                                    pcall(function()
+                                        sNO:FireServer(p, p.CFrame)
+                                        local po = p:FindFirstChild("PartOwner")
+                                        if po then po.Value = LP.Name end
+                                        p.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, 0)
+                                        p.AssemblyLinearVelocity = Vector3.zero; p.AssemblyAngularVelocity = Vector3.zero
+                                    end)
+                                end
+                            end
+                            sp.CFrame = to.CFrame
+                            task.wait(0.05)
+                            sp.CFrame = HID
+                        end
+                    end
+                end
+                task.wait()
+            end
+            if pal and pal.Parent then pcall(function() RS.MenuToys.DestroyToy:FireServer(pal) end) end
+            rE = false
+        end)
+    end
+})
+-- ============================================================
+-- BOOMBOX
+-- ============================================================
+
+local bbName = "Boombox"
+local bbEn = false
+local bbThread = nil
+local bbCur = nil
+local bbOff = CFrame.new(0, 1.0, 1.0) * CFrame.Angles(0, math.rad(180), 0)
+
+local function RemoveBB()
+    if bbCur and bbCur.Parent then
+        pcall(function() RS.MenuToys.DestroyToy:FireServer(bbCur) end)
+    end
+    bbCur = nil
+end
+
+local function SpawnBB()
+    local ch = LP.Character
+    if not ch then return nil end
+    local rp = ch:FindFirstChild("HumanoidRootPart")
+    if not rp then return nil end
+    local sR = RS:WaitForChild("MenuToys"):WaitForChild("SpawnToyRemoteFunction")
+    pcall(function() sR:InvokeServer(bbName, rp.CFrame * CFrame.new(0, 5, 0), Vector3.zero) end)
+    task.wait()
+    local fd = WS:FindFirstChild(LP.Name .. "SpawnedInToys")
+    if fd then
+        for _, c in ipairs(fd:GetChildren()) do
+            if c.Name == bbName then return c end
+        end
+    end
+    return nil
+end
+
+local function GetBBMain(b)
+    if not b then return nil end
+    if b:IsA("BasePart") then return b end
+    local sp = b:FindFirstChild("SoundPart")
+    if sp and sp:IsA("BasePart") then return sp end
+    if b.PrimaryPart then return b.PrimaryPart end
+    return b:FindFirstChildWhichIsA("BasePart")
+end
+
+local function GetBBOwner(b)
+    if not b then return nil end
+    local pt = b:FindFirstChild("SoundPart") or b:FindFirstChildWhichIsA("BasePart")
+    if not pt then return nil end
+    local o = pt:FindFirstChild("PartOwner")
+    if o and o:IsA("ObjectValue") then return o.Value end
+    return nil
+end
+
+local function WeldBB(b)
+    if not b or not b.Parent then return end
+    local ch = LP.Character
+    if not ch then return end
+    local bp = ch:FindFirstChild("Torso") or ch:FindFirstChild("UpperTorso")
+    if not bp then return end
+    local mp = GetBBMain(b)
+    if not mp then return end
+
+    for _, o in ipairs(bp:GetChildren()) do
+        if o.Name == "BoomboxWeld" or o.Name == "BoomboxPartWeld" then o:Destroy() end
+    end
+    for _, pt in ipairs(b:GetDescendants()) do
+        if pt:IsA("BasePart") then
+            for _, o in ipairs(pt:GetChildren()) do
+                if o.Name == "BoomboxWeld" or o.Name == "BoomboxPartWeld" then o:Destroy() end
+            end
+        end
+    end
+
+    for _, pt in pairs(b:GetDescendants()) do
+        if pt:IsA("BasePart") then
+            pt.CanCollide = false; pt.CanQuery = false; pt.CanTouch = false
+            pt.Massless = true; pt.Anchored = false
+            pt.AssemblyLinearVelocity = Vector3.zero; pt.AssemblyAngularVelocity = Vector3.zero
+            pcall(function() pt.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, 0) end)
+            for _, c in ipairs(pt:GetChildren()) do
+                if c.Name ~= "BoomboxWeld" and c.Name ~= "BoomboxPartWeld" then
+                    if c:IsA("BodyPosition") or c:IsA("BodyGyro") or c:IsA("BodyVelocity")
+                        or c:IsA("BodyAngularVelocity") or c:IsA("BodyForce") or c:IsA("BodyThrust")
+                        or c:IsA("VectorForce") or c:IsA("Torque") or c:IsA("LinearVelocity")
+                        or c:IsA("AngularVelocity") or c:IsA("AlignPosition") or c:IsA("AlignOrientation")
+                        or c:IsA("AlignConstraint") or c:IsA("Weld") or c:IsA("WeldConstraint")
+                        or c:IsA("Motor6D") or c:IsA("Snap") then
+                        c:Destroy()
+                    end
+                end
+            end
+        end
+    end
+
+    mp.CFrame = bp.CFrame * bbOff
+    mp.AssemblyLinearVelocity = Vector3.zero
+    mp.AssemblyAngularVelocity = Vector3.zero
+    task.wait()
+
+    for _, pt in pairs(b:GetDescendants()) do
+        if pt:IsA("BasePart") then
+            if pt == mp then
+                local w = Instance.new("Weld")
+                w.Name = "BoomboxWeld"
+                w.Part0 = bp; w.Part1 = mp
+                w.C0 = bbOff; w.C1 = CFrame.new(0, 0, 0)
+                w.Parent = bp
+            else
+                local w = Instance.new("Weld")
+                w.Name = "BoomboxPartWeld"
+                w.Part0 = mp; w.Part1 = pt
+                w.C0 = mp.CFrame:ToObjectSpace(pt.CFrame)
+                w.C1 = CFrame.new(0, 0, 0)
+                w.Parent = mp
+            end
+        end
+    end
+end
+
+sndG:AddToggle("Boombox", {
+    Text = "BoomBox", Default = false,
+    Callback = function(on)
+        bbEn = on
+        if bbThread then task.cancel(bbThread); bbThread = nil end
+        if not on then RemoveBB(); return end
+        bbThread = task.spawn(function()
+            local ch = LP.Character
+            if not ch then return end
+            bbCur = SpawnBB()
+            if not bbCur then return end
+            task.wait()
+            WeldBB(bbCur)
+            while bbEn do
+                task.wait(2)
+                local c = LP.Character
+                if not c then RemoveBB(); break end
+                local bp = c:FindFirstChild("Torso") or c:FindFirstChild("UpperTorso")
+                if not bp then
+                    RemoveBB(); task.wait(1)
+                    bbCur = SpawnBB()
+                    if bbCur then task.wait(); WeldBB(bbCur) end
+                    continue
+                end
+                if not bbCur or not bbCur.Parent then
+                    bbCur = SpawnBB()
+                    if bbCur then task.wait(); WeldBB(bbCur) end
+                    continue
+                end
+                local ow = GetBBOwner(bbCur)
+                if ow and ow ~= LP then
+                    RemoveBB(); task.wait()
+                    bbCur = SpawnBB()
+                    if bbCur then task.wait(); WeldBB(bbCur) end
+                    continue
+                end
+                if not bp:FindFirstChild("BoomboxWeld") then WeldBB(bbCur) end
+            end
+        end)
+    end
+})
+
+-- ============================================================
+-- AUTO-CLICKER POSES
+-- ============================================================
+
+local ACPoses = {
+    Default = {
+        ["Right Arm"] = {0,0,0}, ["Left Arm"] = {0,0,0},
+        ["Right Leg"] = {0,0,0}, ["Left Leg"] = {0,0,0},
+        Head = {0,0,0}, Torso = {0,0,0},
+        BodyPos = {0, 0, -5},
+    },
+    ["Shoulder-Sitting"] = {
+        ["Right Arm"] = {30,0,-40}, ["Left Arm"] = {30,0,40},
+        ["Right Leg"] = {76,7,29}, ["Left Leg"] = {76,7,-29},
+        Head = {-20,0,0}, Torso = {8,0,0},
+        BodyPos = {0, 2.3, 1},
+    },
+    ["JoJo Stand"] = {
+        ["Right Arm"] = {-16,0.3,-6.7}, ["Left Arm"] = {-2,0,0},
+        ["Right Leg"] = {-16,22.5,-1}, ["Left Leg"] = {-18.4,40,-2},
+        Head = {-21.9,17.8,0}, Torso = {9.6,27.1,0},
+        BodyPos = {-2.8, 1.3, 2.75},
+    },
+    ["Standing Sex"] = {
+        ["Right Arm"] = {110,0,-30}, ["Left Arm"] = {110,0,30},
+        ["Right Leg"] = {75,0,20}, ["Left Leg"] = {75,0,-20},
+        Head = {-10,0,0}, Torso = {0,0,0},
+        BodyPos = {0, 0, -1.2},
+    },
+    ["Doggy-Pose"] = {
+        ["Right Arm"] = {100,0,0}, ["Left Arm"] = {100,0,0},
+        ["Right Leg"] = {90,0,40}, ["Left Leg"] = {90,0,-40},
+        Head = {90,0,0}, Torso = {100,-180,0},
+        BodyPos = {0, -1.4, -1.4},
+    },
+    ["Missionary"] = {
+        ["Right Arm"] = {0,0,0}, ["Left Arm"] = {0,0,0},
+        ["Right Leg"] = {0,0,45}, ["Left Leg"] = {0,0,-45},
+        Head = {-45,0,0}, Torso = {90,0,0},
+        BodyPos = {0, -1.4, -1.4},
+    },
+}
+
+local ACState = {
+    Enabled = false,
+    Grab = false,
+    Ragdoll = false,
+    Selected = {},
+    BodyOffset = CFrame.new(0, 0, -5),
+    Rotation = {
+        ["Right Arm"] = Vector3.zero, ["Left Arm"] = Vector3.zero,
+        ["Right Leg"] = Vector3.zero, ["Left Leg"] = Vector3.zero,
+        Head = Vector3.zero, Torso = Vector3.zero,
+    },
+    Offsets = {
+        ["Right Leg"] = Vector3.new(0,1,0), ["Left Leg"] = Vector3.new(0,1,0),
+        ["Right Arm"] = Vector3.new(1,0.5,0), ["Left Arm"] = Vector3.new(-1,0.5,0),
+        Head = Vector3.new(0,1,0),
+    },
+    Transparency = 0,
+    Thread = nil,
+    States = setmetatable({}, {__mode = "k"}),
+}
+
+local ACLimbs = {"Torso", "Right Leg", "Left Leg", "Right Arm", "Left Arm", "Head"}
+
+local function ACChar(p)
+    p = p or LP
+    local ch = p.Character
+    if not ch then return nil, nil, nil end
+    return ch, ch:FindFirstChild("HumanoidRootPart"), ch:FindFirstChild("Humanoid")
+end
+
+local function ACGrab(part, offsetCF)
+    local _, root, hum = ACChar()
+    if not root or not hum or hum.Health <= 0 or not part or not part.Parent then return end
+    local target = (offsetCF or root.CFrame) * CFrame.new(0, 1.593, 0)
+    local cf = part.CFrame
+    cf = CFrame.new(target.Position, cf.Position)
+    pcall(function() RS.GrabEvents.SetNetworkOwner:FireServer(part, cf) end)
+end
+
+local function ACIsOwner(part)
+    if not part or not part.Parent then return false end
+    local o = part:FindFirstChild("PartOwner")
+    return o and o.Value == LP
+end
+
+local function ACSNO(part, timeout)
+    local _, root, hum = ACChar()
+    if not hum or hum.Health <= 0 or not root or not part or not part.Parent then return false end
+    if ACIsOwner(part) then return true end
+    timeout = timeout or 0.65
+    local start = tick()
+    while part.Parent and not ACIsOwner(part) and hum.Health > 0 and root.Parent and tick() - start < timeout do
+        ACGrab(part)
+        RUN.Heartbeat:Wait()
+    end
+    return ACIsOwner(part)
+end
+
+local function ACCleanup(p)
+    local st = ACState.States[p]
+    ACState.States[p] = nil
+    if not st then return end
+    if st.TransparencyConnection then st.TransparencyConnection:Disconnect() end
+    for part, t in pairs(st.Transparency) do
+        if part.Parent then part.LocalTransparencyModifier = t end
+    end
+    local ch = st.Character
+    if ch then
+        local torso = ch:FindFirstChild("Torso")
+        if torso then
+            local bp = torso:FindFirstChild("AutoClickerBP")
+            local bg = torso:FindFirstChild("AutoClickerBG")
+            if bp then bp:Destroy() end
+            if bg then bg:Destroy() end
+        end
+        for _, limbName in ipairs(ACLimbs) do
+            local part = ch:FindFirstChild(limbName)
+            if part then
+                if limbName == "Torso" or limbName == "Head" then part.CanCollide = true end
+                local socket = part:FindFirstChild("BallSocketConstraint")
+                if socket then socket.LimitsEnabled = true; socket.TwistLimitsEnabled = true end
+                local gyro = part:FindFirstChild("AutoClickerBG")
+                if gyro then gyro:Destroy() end
+            end
+        end
+    end
+end
+
+local function ACApplyPose(pose)
+    if not pose then return end
+    if pose.BodyPos then
+        ACState.BodyOffset = CFrame.new(pose.BodyPos[1] or 0, pose.BodyPos[2] or 0, pose.BodyPos[3] or -5)
+    end
+    for _, limb in ipairs({"Right Arm","Left Arm","Right Leg","Left Leg","Head","Torso"}) do
+        local r = pose[limb]
+        if r then ACState.Rotation[limb] = Vector3.new(r[1] or 0, r[2] or 0, r[3] or 0) end
+    end
+end
+
+local function ACStart()
+    if ACState.Thread then task.cancel(ACState.Thread) end
+    ACState.Thread = task.spawn(function()
+        while ACState.Enabled do
+            local char, root, hum = ACChar()
+            local _, centerRoot, centerHum = ACChar(LP)
+            local centerTorso = char and char:FindFirstChild("Torso")
+
+            for p in pairs(ACState.States) do
+                if not ACState.Selected[p] then ACCleanup(p) end
+            end
+
+            if char and root and hum and hum.Health > 0 then
+                local myTorso = char:FindFirstChild("Torso")
+                if myTorso then myTorso.CanCollide = false end
+                local myHead = char:FindFirstChild("Head")
+                if myHead then myHead.CanCollide = false end
+
+                for player in pairs(ACState.Selected) do
+                    if player ~= LP and player.Parent and player.Character then
+                        local tch = player.Character
+                        local tRoot = tch:FindFirstChild("HumanoidRootPart")
+                        local tHum = tch:FindFirstChild("Humanoid")
+                        local tTorso = tch:FindFirstChild("Torso")
+                        if tRoot and tHum and tHum.Health > 0 and tTorso and centerRoot and centerHum and centerHum.Health > 0 and centerTorso then
+                            -- ТЕЛЕПОРТ К ЦЕЛИ как в кике
+                            local dist = (centerRoot.Position - tTorso.Position).Magnitude
+                            if dist > 25 then
+                                centerRoot.CFrame = tTorso.CFrame * CFrame.new(0, 0, 2)
+                                centerRoot.Velocity = Vector3.zero
+                            end
+
+                            local st = ACState.States[player]
+                            if st and st.Character ~= tch then ACCleanup(player); st = nil end
+
+                            if not st then
+                                st = {
+                                    Character = tch,
+                                    Gyros = {}, GyroTargets = {}, Parts = {},
+                                    Sockets = {}, SocketAttachments = {}, LimbOffsets = {},
+                                    RotationValues = {}, RotationFrames = {},
+                                    Transparency = {},
+                                }
+                                ACState.States[player] = st
+
+                                st.TransparencyConnection = tch.DescendantAdded:Connect(function(desc)
+                                    if ACState.States[player] ~= st or not desc:IsA("BasePart") then return end
+                                    st.Transparency[desc] = desc.LocalTransparencyModifier
+                                    desc.LocalTransparencyModifier = ACState.Transparency
+                                end)
+
+                                for _, part in tch:GetChildren() do
+                                    if part:IsA("BasePart") then part.CanCollide = false end
+                                end
+
+                                for _, limbName in ipairs(ACLimbs) do
+                                    local part = tch:FindFirstChild(limbName)
+                                    if part then
+                                        st.Parts[limbName] = part
+                                        local socket = part:FindFirstChild("BallSocketConstraint")
+                                        st.Sockets[limbName] = socket
+                                        st.SocketAttachments[limbName] = socket and socket.Attachment1
+                                    end
+                                end
+                            end
+
+                            for _, part in tch:GetChildren() do
+                                if part:IsA("BasePart") then
+                                    if st.Transparency[part] == nil then st.Transparency[part] = part.LocalTransparencyModifier end
+                                    part.LocalTransparencyModifier = ACState.Transparency
+                                end
+                            end
+
+                            local bp = st.BodyPosition
+                            if not bp or bp.Parent ~= tTorso then
+                                bp = tTorso:FindFirstChild("AutoClickerBP") or Instance.new("BodyPosition")
+                                bp.Name = "AutoClickerBP"
+                                bp.D = 450
+                                bp.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+                                bp.Parent = tTorso
+                                st.BodyPosition = bp
+                                st.BodyTarget = nil
+                            end
+
+                            local targetPos = (centerRoot.CFrame * ACState.BodyOffset).Position
+                            if st.BodyTarget ~= targetPos then
+                                bp.Position = targetPos
+                                st.BodyTarget = targetPos
+                            end
+
+                            local lookCF = CFrame.lookAt(
+                                tTorso.Position,
+                                Vector3.new(centerTorso.Position.X, tTorso.Position.Y, centerTorso.Position.Z)
+                            )
+
+                            for _, limbName in ipairs(ACLimbs) do
+                                local part = st.Parts[limbName]
+                                if not part or part.Parent ~= tch then
+                                    part = tch:FindFirstChild(limbName)
+                                    st.Parts[limbName] = part
+                                    st.Gyros[limbName] = nil
+                                    st.GyroTargets[limbName] = nil
+                                    if part then
+                                        local socket = part:FindFirstChild("BallSocketConstraint")
+                                        st.Sockets[limbName] = socket
+                                        st.SocketAttachments[limbName] = socket and socket.Attachment1
+                                    end
+                                end
+                                if part then
+                                    part.CanCollide = false
+                                    local socket = st.Sockets[limbName]
+                                    if socket then
+                                        socket.LimitsEnabled = false
+                                        socket.TwistLimitsEnabled = false
+                                        local off = ACState.Offsets[limbName]
+                                        local attach = st.SocketAttachments[limbName]
+                                        if off and attach and st.LimbOffsets[limbName] ~= off then
+                                            attach.Position = off
+                                            st.LimbOffsets[limbName] = off
+                                        end
+                                    end
+                                    local gyro = st.Gyros[limbName]
+                                    if not gyro or gyro.Parent ~= part then
+                                        gyro = part:FindFirstChild("AutoClickerBG") or Instance.new("BodyGyro")
+                                        gyro.Name = "AutoClickerBG"
+                                        gyro.D = 500
+                                        gyro.P = 7500
+                                        gyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+                                        gyro.Parent = part
+                                        st.Gyros[limbName] = gyro
+                                        st.GyroTargets[limbName] = nil
+                                    end
+                                    local rot = ACState.Rotation[limbName] or Vector3.zero
+                                    if st.RotationValues[limbName] ~= rot then
+                                        st.RotationValues[limbName] = rot
+                                        st.RotationFrames[limbName] = CFrame.Angles(math.rad(rot.X), math.rad(rot.Y), math.rad(rot.Z))
+                                    end
+                                    local rotCF = st.RotationFrames[limbName]
+                                    local targetCF
+                                    if limbName == "Torso" then targetCF = lookCF * rotCF
+                                    else targetCF = tTorso.CFrame * rotCF end
+                                    if st.GyroTargets[limbName] ~= targetCF then
+                                        gyro.CFrame = targetCF
+                                        st.GyroTargets[limbName] = targetCF
+                                    end
+                                end
+                            end
+
+                            if ACState.Grab then
+                                ACSNO(tTorso)
+                            end
+
+                            if ACState.Ragdoll then
+                                local rd = tHum:FindFirstChild("Ragdolled")
+                                if rd and not rd.Value then
+                                    pcall(function()
+                                        RS.CharacterEvents.RagdollRemote:FireServer(tRoot, 0)
+                                    end)
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+            RUN.Heartbeat:Wait()
+        end
+    end)
+end
+
+local function ACStop()
+    ACState.Enabled = false
+    for p in pairs(ACState.States) do ACCleanup(p) end
+end
+
+posG:AddToggle("ACEnabled", {
+    Text = "Toggle AutoClicker Pose", Default = false,
+    Callback = function(v)
+        ACState.Enabled = v
+        if v then ACStart() else ACStop() end
+    end
+})
+
+posGT:AddDropdown("ACPlayers", {
+    Text = "Select Targets", Values = GetPL(), Multi = true, Default = {},
+    Callback = function(v)
+        ACState.Selected = {}
+        for name, on in pairs(v) do
+            if on then
+                local p = P:FindFirstChild(name)
+                if p then ACState.Selected[p] = true end
+            end
+        end
+    end
+})
+
+posGT:AddToggle("ACGrab", {
+    Text = "Grab (SNO)", Default = false,
+    Callback = function(v) ACState.Grab = v end
+})
+
+posGT:AddToggle("ACRagdoll", {
+    Text = "Ragdoll Target", Default = false,
+    Callback = function(v) ACState.Ragdoll = v end
+})
+
+posGT:AddSlider("ACTr", {
+    Text = "Target Transparency", Min = 0, Max = 1, Default = 0, Rounding = 2,
+    Callback = function(v) ACState.Transparency = v end
+})
+
+local presetNames = {}
+for name in pairs(ACPoses) do table.insert(presetNames, name) end
+table.sort(presetNames)
+
+posGP:AddDropdown("ACPreset", {
+    Text = "Preset", Values = presetNames, Default = 1,
+    Callback = function(v)
+        local pose = ACPoses[v]
+        if pose then ACApplyPose(pose) end
+    end
+})
+
+posGP:AddButton({ Text = "Apply Preset", Func = function()
+    local v = posGP:GetValue("ACPreset")
+    local pose = ACPoses[v]
+    if pose then ACApplyPose(pose) end
+end })
+
+posGP:AddButton({ Text = "Reset Pose", Func = function() ACApplyPose(ACPoses.Default) end })
+
+local offsetTab = posGR:AddTab("Offset", "move-diagonal")
+local rotationTab = posGR:AddTab("Rotation", "refresh-cw")
+
+local rotLimbs = {"Torso", "Right Leg", "Left Leg", "Right Arm", "Left Arm", "Head"}
+local offLimbs = {"Right Leg", "Left Leg", "Right Arm", "Left Arm", "Head"}
+
+offsetTab:AddDropdown("ACLimbO", { Text = "Select Limb", Values = offLimbs, Default = 1 })
+for _, limb in ipairs(offLimbs) do
+    local box = offsetTab:AddDependencyBox()
+    box:SetupDependencies({{offsetTab.Toggles.ACLimbO, limb}})
+    for _, ax in ipairs({"X","Y","Z"}) do
+        box:AddSlider("ACO_" .. limb .. "_" .. ax, {
+            Text = ax .. " Offset",
+            Min = -5, Max = 5, Default = ACState.Offsets[limb][ax], Rounding = 1,
+            Callback = function(v)
+                local cur = ACState.Offsets[limb]
+                local new
+                if ax == "X" then new = Vector3.new(v, cur.Y, cur.Z)
+                elseif ax == "Y" then new = Vector3.new(cur.X, v, cur.Z)
+                else new = Vector3.new(cur.X, cur.Y, v) end
+                ACState.Offsets[limb] = new
+            end
+        })
+    end
+end
+
+rotationTab:AddDropdown("ACLimbR", { Text = "Select Limb", Values = rotLimbs, Default = 1 })
+for _, limb in ipairs(rotLimbs) do
+    local box = rotationTab:AddDependencyBox()
+    box:SetupDependencies({{rotationTab.Toggles.ACLimbR, limb}})
+    for _, ax in ipairs({"X","Y","Z"}) do
+        box:AddSlider("ACR_" .. limb .. "_" .. ax, {
+            Text = ax .. " Rotation",
+            Min = -180, Max = 180, Default = 0, Rounding = 1,
+            Callback = function(v)
+                local cur = ACState.Rotation[limb]
+                local new
+                if ax == "X" then new = Vector3.new(v, cur.Y, cur.Z)
+                elseif ax == "Y" then new = Vector3.new(cur.X, v, cur.Z)
+                else new = Vector3.new(cur.X, cur.Y, v) end
+                ACState.Rotation[limb] = new
+            end
+        })
+    end
+end
+
+posG:AddSlider("ACBodyX", { Text = "Body X", Min = -10, Max = 10, Default = 0, Rounding = 1,
+    Callback = function(v) ACState.BodyOffset = CFrame.new(v, ACState.BodyOffset.Y, ACState.BodyOffset.Z) end })
+posG:AddSlider("ACBodyY", { Text = "Body Y", Min = -5, Max = 20, Default = 0, Rounding = 1,
+    Callback = function(v) ACState.BodyOffset = CFrame.new(ACState.BodyOffset.X, v, ACState.BodyOffset.Z) end })
+posG:AddSlider("ACBodyZ", { Text = "Body Z", Min = -10, Max = 10, Default = -5, Rounding = 1,
+    Callback = function(v) ACState.BodyOffset = CFrame.new(ACState.BodyOffset.X, ACState.BodyOffset.Y, v) end })
+
+ThemeManager:SetLibrary(Library)
+SaveManager:SetLibrary(Library)
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetFolder("losb")
+SaveManager:BuildConfigSection(setT)
+ThemeManager:ApplyToTab(setT)
+SaveManager:LoadAutoloadConfig()
